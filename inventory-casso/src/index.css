@@ -94,6 +94,25 @@ input:focus-visible {
   outline: none;
 }
 
+.register-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 15px 16px;
+  border-radius: 8px;
+  color: #166534;
+  font-weight: bold;
+  font-size: 15px;
+  background-color: transparent;
+  border: 2px solid #166534;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.register-btn:hover {
+  background-color: #166534;
+  color: white;
+}
+
 #root {
   min-height: 100vh;
   display: flex;

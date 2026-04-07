@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
 
-export default function Login() {
+interface LoginProps {
+  onModeChange?: (mode: 'login' | 'register') => void;
+}
+
+export default function Login({ onModeChange }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Login submitted", { email, password });
+  };
+
+  const handleRegisterClick = () => {
+    onModeChange?.('register');
   };
 
   return (
@@ -81,6 +89,17 @@ export default function Login() {
         >
           Login
         </button>
+
+        <p className="text-sm text-center text-gray-500 font-[var(--sans)]">
+          Don&apos;t you have an account?{' '}
+          <button
+            type="button"
+            onClick={handleRegisterClick}
+            className="text-green-600 hover:underline font-medium cursor-pointer bg-transparent border-none p-0"
+          >
+            Click here to register
+          </button>
+        </p>
       </form>
     </div>
   );

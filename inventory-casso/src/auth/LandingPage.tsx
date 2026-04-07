@@ -1,13 +1,21 @@
+import { useState } from 'react';
 import Login from './Login';
+import Register from './register';
 import logoUrl from '../assets/casso.png';
 import bgImage from '../assets/casso1.jpg';
 
 export default function LandingPage() {
-    return (
-        <div className="flex h-screen w-full overflow-hidden">
+    const [mode, setMode] = useState<'login' | 'register'>('login');
 
-            {/* Left side: Full edge-to-edge solid color gradient from the Maroon/Red palette */}
-            <div className="hidden lg:flex w-1/2 flex-col items-center justify-center relative bg-gradient-to-br from-[#166534] to-[#14532d] selection:bg-white selection:text-[#166534]">
+    return (
+        <div className="relative h-screen w-full overflow-hidden bg-white">
+
+            {/* Sliding Background Panel (Left in Login, Right in Register) */}
+            <div 
+                className={`hidden lg:flex absolute top-0 left-0 w-1/2 h-full flex-col items-center justify-center transition-transform duration-700 ease-in-out z-20 bg-gradient-to-br from-[#166534] to-[#14532d] selection:bg-white selection:text-[#166534] ${
+                    mode === 'register' ? 'translate-x-full' : 'translate-x-0'
+                }`}
+            >
                 {/* Background Image Overlay */}
                 <img 
                     src={bgImage}
@@ -16,13 +24,13 @@ export default function LandingPage() {
                 />
 
                 {/* Dark overlay to ensure red background shows through */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#166534] to-[#14532d] opacity-80"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#166534] to-[#14532d] opacity-80 z-0"></div>
 
                 {/* Subtle background dark wash to make it feel premium */}
-                <div className="absolute inset-0 bg-black/15 pointer-events-none mix-blend-multiply"></div>
+                <div className="absolute inset-0 bg-black/15 pointer-events-none mix-blend-multiply z-0"></div>
 
                 {/* Centered Main Content with Big Logo */}
-                <div className="flex flex-col items-center text-center z-10 px-12">
+                <div className="relative z-10 flex flex-col items-center text-center px-12">
 
                     {/* BIG Logo on the left side - showing its natural colors */}
                     <div className="w-72 h-72 rounded-full overflow-hidden mb-8 drop-shadow-2xl transition-transform hover:scale-105 duration-700 flex items-center justify-center bg-white/10">
@@ -42,12 +50,21 @@ export default function LandingPage() {
                 </div>
             </div>
 
-            {/* Right side: Login Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center bg-white relative px-6 md:px-12">
-
-                {/* Form Container (No card container, directly on background) */}
-                <div className="w-full max-w-[360px]">
-                    <Login />
+            {/* Sliding Form Panel (Right in Login, Left in Register) */}
+            <div 
+                className={`absolute top-0 right-0 w-full lg:w-1/2 h-full flex items-center justify-center bg-white px-6 md:px-12 transition-transform duration-700 ease-in-out z-10 ${
+                    mode === 'register' ? 'lg:-translate-x-full' : 'translate-x-0'
+                }`}
+            >
+                {/* Form Container overlapping dynamically */}
+                <div className="w-full max-w-[360px] relative flex justify-center items-center">
+                    <div className={`w-full transition-all duration-500 ${mode === 'login' ? 'opacity-100 relative z-10 translate-y-0' : 'opacity-0 absolute pointer-events-none -translate-y-4'}`}>
+                        <Login onModeChange={setMode} />
+                    </div>
+                    
+                    <div className={`w-full transition-all duration-500 ${mode === 'register' ? 'opacity-100 relative z-10 translate-y-0' : 'opacity-0 absolute pointer-events-none translate-y-4'}`}>
+                        <Register onModeChange={setMode} />
+                    </div>
                 </div>
 
                 {/* Footer text pinned to bottom */}
