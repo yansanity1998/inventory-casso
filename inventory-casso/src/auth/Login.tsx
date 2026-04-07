@@ -27,7 +27,7 @@ export default function Login() {
 
         <div className="space-y-4">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
               {/* Mail Icon SVG */}
               <svg className="h-[18px] w-[18px] text-gray-400 group-focus-within:text-green-600 transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
@@ -39,13 +39,19 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-11 pr-4 py-[14px] rounded-lg border border-[var(--border)] bg-white text-[var(--text-h)] text-sm focus:ring-1 focus:ring-green-600 focus:border-green-600 focus:placeholder:text-green-600 transition-all outline-none placeholder:text-gray-400"
-              placeholder="Email"
+              className="w-full pl-11 pr-4 py-[14px] rounded-lg border border-[var(--border)] bg-white text-black text-sm focus:ring-1 focus:ring-green-600 focus:border-green-600 transition-all outline-none placeholder-shown:placeholder-gray-400 peer"
+              placeholder=" "
             />
+            <label
+              htmlFor="email"
+              className="absolute left-11 top-[14px] text-sm text-gray-400 transition-all duration-200 pointer-events-none peer-focus:top-[-8px] peer-focus:text-green-600 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-white peer-not-placeholder-shown:top-[-8px] peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:px-1 peer-not-placeholder-shown:bg-white peer-not-placeholder-shown:text-green-600 bg-white"
+            >
+              Email
+            </label>
           </div>
 
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
               {/* Lock Icon SVG */}
               <svg className="h-[18px] w-[18px] text-gray-400 group-focus-within:text-green-600 transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -57,9 +63,15 @@ export default function Login() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-11 pr-4 py-[14px] rounded-lg border border-[var(--border)] bg-white text-[var(--text-h)] text-sm focus:ring-1 focus:ring-green-600 focus:border-green-600 focus:placeholder:text-green-600 transition-all outline-none placeholder:text-gray-400"
-              placeholder="Password"
+              className="w-full pl-11 pr-4 py-[14px] rounded-lg border border-[var(--border)] bg-white text-black text-sm focus:ring-1 focus:ring-green-600 focus:border-green-600 transition-all outline-none placeholder-shown:placeholder-gray-400 peer"
+              placeholder=" "
             />
+            <label
+              htmlFor="password"
+              className="absolute left-11 top-[14px] text-sm text-gray-400 transition-all duration-200 pointer-events-none peer-focus:top-[-8px] peer-focus:text-green-600 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-white peer-not-placeholder-shown:top-[-8px] peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:px-1 peer-not-placeholder-shown:bg-white peer-not-placeholder-shown:text-green-600 bg-white"
+            >
+              Password
+            </label>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import Login from './login';
+import Login from './Login';
 import logoUrl from '../assets/casso.png';
 import bgImage from '../assets/casso1.jpg';
 
