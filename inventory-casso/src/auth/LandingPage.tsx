@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Login from './Login';
-import Register from './register';
+import Register from './Register';
 import logoUrl from '../assets/casso.png';
 import bgImage from '../assets/casso1.jpg';
 

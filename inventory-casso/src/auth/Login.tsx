@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface LoginProps {
   onModeChange?: (mode: 'login' | 'register') => void;
@@ -7,10 +8,26 @@ interface LoginProps {
 export default function Login({ onModeChange }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login submitted", { email, password });
+    setError('');
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      window.location.href = '/dashboard';
+    }
   };
 
   const handleRegisterClick = () => {
@@ -86,9 +103,12 @@ export default function Login({ onModeChange }: LoginProps) {
         <button
           type="submit"
           className="login-btn"
+          disabled={loading}
         >
-          Login
+          {loading ? 'Logging in...' : 'Login'}
         </button>
+
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
         <p className="text-sm text-center text-gray-500 font-[var(--sans)]">
           Don&apos;t you have an account?{' '}

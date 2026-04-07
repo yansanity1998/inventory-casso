@@ -1,9 +1,13 @@
 import LandingPage from './auth/LandingPage'
+import { ToastContainer } from './components/Toast'
 import './App.css'
 
 function App() {
   return (
-    <LandingPage />
+    <>
+      <ToastContainer />
+      <LandingPage />
+    </>
   )
 }
 

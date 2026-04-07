@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { showToast } from '../components/Toast';
 
 interface RegisterProps {
   onModeChange?: (mode: 'login' | 'register') => void;
@@ -8,10 +10,34 @@ export default function Register({ onModeChange }: RegisterProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Register submitted", { email, password });
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (signUpError) {
+      showToast(signUpError.message, 'error');
+      setError(signUpError.message);
+    } else {
+      showToast('Account created successfully! Please login.', 'success');
+      onModeChange?.('login');
+    }
   };
 
   const handleLoginClick = () => {
@@ -103,9 +129,11 @@ export default function Register({ onModeChange }: RegisterProps) {
           </div>
         </div>
 
-        <button type="submit" className="login-btn">
-          Sign Up
+        <button type="submit" className="login-btn" disabled={loading}>
+          {loading ? 'Signing up...' : 'Sign Up'}
         </button>
+
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
         <p className="text-sm text-center text-gray-500 font-[var(--sans)]">
           Already have an account?{' '}
