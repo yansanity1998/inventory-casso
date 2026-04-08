@@ -5,6 +5,7 @@ import { showToast } from '../components/Toast';
 
 interface Material {
   id: string;
+  material_id: string;
   name: string;
   category: string;
   stocks: number;
@@ -23,6 +24,7 @@ export default function Materials() {
   
   const [formData, setFormData] = useState({
     id: '',
+    material_id: '',
     name: '',
     category: '',
     stocks: '',
@@ -65,13 +67,14 @@ export default function Materials() {
     if (material) {
       setFormData({
         id: material.id,
+        material_id: material.material_id || '',
         name: material.name,
         category: material.category,
         stocks: material.stocks.toString(),
         description: material.description || '',
       });
     } else {
-      setFormData({ id: '', name: '', category: '', stocks: '', description: '' });
+      setFormData({ id: '', material_id: '', name: '', category: '', stocks: '', description: '' });
     }
     setIsModalOpen(true);
   };
@@ -92,11 +95,11 @@ export default function Materials() {
 
     setSaving(true);
     const materialData = {
+      material_id: formData.material_id,
       name: formData.name,
       category: formData.category,
       stocks: parseInt(formData.stocks) || 0,
       description: formData.description,
-      updated_at: new Date().toISOString(),
     };
 
     let error;
@@ -185,12 +188,12 @@ export default function Materials() {
                 </tr>
               </thead>
               <tbody className="text-sm divide-y divide-gray-50">
-                {filteredMaterials.map((mat, index) => {
+                {filteredMaterials.map((mat) => {
                   const status = getStatus(mat.stocks);
                   return (
                     <tr key={mat.id} className="hover:bg-gray-50/80 transition-colors group">
                       <td className="px-6 py-4 font-mono text-[11px] font-semibold text-gray-400 tracking-wider">
-                        MAT-{String(index + 1).padStart(3, '0')}
+                        {mat.material_id || 'N/A'}
                       </td>
                       <td className="px-6 py-4 font-bold text-gray-800">{mat.name}</td>
                       <td className="px-6 py-4 text-gray-600 capitalize font-medium">{mat.category}</td>
@@ -241,9 +244,9 @@ export default function Materials() {
       {/* Modern Small Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in-up">
-          <div className="bg-white w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden relative transform scale-100 transition-transform">
+          <div className="bg-white w-full max-w-sm rounded-lg shadow-2xl overflow-hidden relative transform scale-100 transition-transform border border-gray-200">
             
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <h3 className="font-bold text-gray-800 text-lg">
                 {modalMode === 'add' ? 'Add Material' : modalMode === 'edit' ? 'Edit Material' : 'View Material'}
               </h3>
@@ -259,13 +262,26 @@ export default function Materials() {
               <div className="space-y-4">
                 
                 <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Material ID</label>
+                  <input 
+                    type="text" 
+                    value={formData.material_id}
+                    onChange={(e) => setFormData({...formData, material_id: e.target.value})}
+                    disabled={modalMode === 'view'}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-medium"
+                    placeholder="e.g. MAT-001"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Item Name</label>
                   <input 
                     type="text" 
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                     disabled={modalMode === 'view'}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-medium"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-medium"
                     placeholder="e.g. Printer Paper"
                     required
                   />
@@ -278,7 +294,7 @@ export default function Materials() {
                       value={formData.category}
                       onChange={(e) => setFormData({...formData, category: e.target.value})}
                       disabled={modalMode === 'view'}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-medium"
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-medium"
                       required
                     >
                       <option value="">Select...</option>
@@ -296,7 +312,7 @@ export default function Materials() {
                       value={formData.stocks}
                       onChange={(e) => setFormData({...formData, stocks: e.target.value})}
                       disabled={modalMode === 'view'}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-bold"
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-bold"
                       placeholder="0"
                       min="0"
                     />
@@ -310,7 +326,7 @@ export default function Materials() {
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     disabled={modalMode === 'view'}
                     rows={2}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none resize-none disabled:opacity-70 disabled:bg-gray-100"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none resize-none disabled:opacity-70 disabled:bg-gray-100"
                     placeholder="Brief details..."
                   ></textarea>
                 </div>
@@ -321,7 +337,7 @@ export default function Materials() {
                   <button 
                     type="submit" 
                     disabled={saving}
-                    className="w-full bg-[#166534] hover:bg-[#14532d] text-white py-3 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                    className="w-full bg-[#166534] hover:bg-[#14532d] text-white py-3 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                   >
                     <Save className="w-5 h-5" />
                     {saving ? 'Saving...' : 'Save Material'}
@@ -330,7 +346,7 @@ export default function Materials() {
                   <button 
                     type="button" 
                     onClick={closeModal}
-                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.98]"
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg text-sm font-bold transition-all active:scale-[0.98]"
                   >
                     Close View
                   </button>

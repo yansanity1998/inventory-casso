@@ -10,6 +10,7 @@ export default function AddMaterial() {
   const [saving, setSaving] = useState(false);
   
   const [formData, setFormData] = useState({
+    material_id: '',
     name: '',
     category: '',
     stocks: '',
@@ -19,18 +20,18 @@ export default function AddMaterial() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.category) {
+    if (!formData.material_id || !formData.name || !formData.category) {
       showToast('Please fill in required fields', 'error');
       return;
     }
 
     setSaving(true);
     const materialData = {
+      material_id: formData.material_id,
       name: formData.name,
       category: formData.category,
       stocks: parseInt(formData.stocks) || 0,
       description: formData.description,
-      updated_at: new Date().toISOString(),
     };
 
     const { error } = await supabase.from('materials').insert(materialData);
@@ -69,7 +70,7 @@ export default function AddMaterial() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in-up">
           <div className="bg-white w-full max-w-sm rounded-lg shadow-2xl overflow-hidden relative transform scale-100 transition-transform border border-gray-200">
             
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <h3 className="font-bold text-gray-800 text-lg">Add Material</h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -83,12 +84,24 @@ export default function AddMaterial() {
               <div className="space-y-4">
                 
                 <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Material ID</label>
+                  <input 
+                    type="text" 
+                    value={formData.material_id}
+                    onChange={(e) => setFormData({...formData, material_id: e.target.value})}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
+                    placeholder="e.g. MAT-001"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Item Name</label>
                   <input 
                     type="text" 
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
                     placeholder="e.g. Printer Paper"
                     required
                   />
@@ -100,7 +113,7 @@ export default function AddMaterial() {
                     <select 
                       value={formData.category}
                       onChange={(e) => setFormData({...formData, category: e.target.value})}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
                       required
                     >
                       <option value="">Select...</option>
@@ -117,7 +130,7 @@ export default function AddMaterial() {
                       type="number" 
                       value={formData.stocks}
                       onChange={(e) => setFormData({...formData, stocks: e.target.value})}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-bold"
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-bold"
                       placeholder="0"
                       min="0"
                     />
@@ -130,7 +143,7 @@ export default function AddMaterial() {
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     rows={2}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none resize-none"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none resize-none"
                     placeholder="Brief details..."
                   ></textarea>
                 </div>
@@ -140,7 +153,7 @@ export default function AddMaterial() {
                 <button 
                   type="submit" 
                   disabled={saving}
-                  className="w-full bg-[#166534] hover:bg-[#14532d] text-white py-3 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                  className="w-full bg-[#166534] hover:bg-[#14532d] text-white py-3 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                 >
                   <Save className="w-5 h-5" />
                   {saving ? 'Adding...' : 'Add Material'}
