@@ -1,113 +1,346 @@
-import { useState } from 'react';
-import { Search, Filter, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Filter, Edit2, Trash2, Eye, X, Save } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { showToast } from '../components/Toast';
+
+interface Material {
+  id: string;
+  name: string;
+  category: string;
+  stocks: number;
+  description: string;
+}
 
 export default function Materials() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Static data for now as requested
-  const materials = [
-    { id: 'MAT-001', name: 'Office Chairs', category: 'Furniture', stock: 45, unit: 'pcs', status: 'In Stock' },
-    { id: 'MAT-002', name: 'Bond Paper A4', category: 'Supplies', stock: 120, unit: 'reams', status: 'In Stock' },
-    { id: 'MAT-003', name: 'Dell Monitor 24"', category: 'Electronics', stock: 8, unit: 'pcs', status: 'Low Stock' },
-    { id: 'MAT-004', name: 'Staplers', category: 'Supplies', stock: 0, unit: 'pcs', status: 'Out of Stock' },
-    { id: 'MAT-005', name: 'Filing Cabinets', category: 'Furniture', stock: 12, unit: 'pcs', status: 'In Stock' },
-  ];
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
+  const [saving, setSaving] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    id: '',
+    name: '',
+    category: '',
+    stocks: '',
+    description: '',
+  });
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
+  const fetchMaterials = async () => {
+    const { data, error } = await supabase
+      .from('materials')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      showToast('Failed to load materials', 'error');
+    } else {
+      setMaterials(data || []);
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this material?')) return;
+
+    const { error } = await supabase.from('materials').delete().eq('id', id);
+    
+    if (error) {
+      showToast('Failed to delete material', 'error');
+    } else {
+      showToast('Material deleted successfully', 'success');
+      fetchMaterials();
+    }
+  };
+
+  const openModal = (mode: 'add' | 'edit' | 'view', material?: Material) => {
+    setModalMode(mode);
+    if (material) {
+      setFormData({
+        id: material.id,
+        name: material.name,
+        category: material.category,
+        stocks: material.stocks.toString(),
+        description: material.description || '',
+      });
+    } else {
+      setFormData({ id: '', name: '', category: '', stocks: '', description: '' });
+    }
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => setIsModalOpen(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (modalMode === 'view') {
+      closeModal();
+      return;
+    }
+    
+    if (!formData.name || !formData.category) {
+      showToast('Please fill in required fields', 'error');
+      return;
+    }
+
+    setSaving(true);
+    const materialData = {
+      name: formData.name,
+      category: formData.category,
+      stocks: parseInt(formData.stocks) || 0,
+      description: formData.description,
+      updated_at: new Date().toISOString(),
+    };
+
+    let error;
+    if (modalMode === 'edit') {
+      ({ error } = await supabase.from('materials').update(materialData).eq('id', formData.id));
+    } else {
+      ({ error } = await supabase.from('materials').insert(materialData));
+    }
+
+    setSaving(false);
+
+    if (error) {
+      showToast(error.message, 'error');
+    } else {
+      showToast(modalMode === 'edit' ? 'Material updated successfully' : 'Material added successfully', 'success');
+      closeModal();
+      fetchMaterials();
+    }
+  };
+
+  const getStatus = (stock: number) => {
+    if (stock === 0) return { label: 'Out of Stock', class: 'bg-red-100 text-red-700' };
+    if (stock < 10) return { label: 'Low Stock', class: 'bg-orange-100 text-orange-700' };
+    return { label: 'In Stock', class: 'bg-green-100 text-green-700' };
+  };
+
+  const filteredMaterials = materials.filter((mat) =>
+    mat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    mat.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="h-full flex flex-col space-y-6 animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="h-full flex flex-col space-y-6 relative">
+      <div className="flex justify-between items-end gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 font-[var(--heading)]">Materials Inventory</h2>
-          <p className="text-sm text-gray-500">Manage and view all documented materials in the system.</p>
+          <h2 className="text-3xl font-black text-gray-800 font-[var(--heading)] tracking-tight">Materials Inventory</h2>
+          <p className="text-sm text-gray-500 font-[var(--sans)] mt-1">Manage and track your supplies efficiently.</p>
         </div>
-        <button className="bg-[#166534] hover:bg-[#14532d] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
-          Export Data
-        </button>
       </div>
 
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100/60 flex flex-col overflow-hidden">
         {/* Table Toolbar */}
-        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between gap-4">
-          <div className="relative w-full sm:w-96 group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400 group-focus-within:text-[#166534]" />
+        <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between gap-4 bg-gray-50/30">
+          <div className="relative w-full sm:w-[400px] shadow-sm rounded-xl overflow-hidden bg-white">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
             </div>
             <input
               type="text"
-              placeholder="Search materials..."
+              placeholder="Search by name or category..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:ring-1 focus:ring-[#166534] focus:border-[#166534] transition-all outline-none"
+              className="w-full pl-11 pr-4 py-2.5 border border-gray-200 text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none"
             />
           </div>
-          <button className="flex items-center gap-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <button className="flex items-center gap-2 text-sm font-semibold text-gray-600 bg-white shadow-sm border border-gray-200 px-5 py-2.5 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all active:scale-95">
             <Filter className="w-4 h-4" />
-            Filters
+            Filter
           </button>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Item ID</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Stock</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm divide-y divide-gray-50">
-              {materials.map((mat) => (
-                <tr key={mat.id} className="hover:bg-gray-50/50 transition-colors group">
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{mat.id}</td>
-                  <td className="px-6 py-4 font-medium text-gray-800">{mat.name}</td>
-                  <td className="px-6 py-4 text-gray-600">{mat.category}</td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="font-semibold text-gray-700">{mat.stock}</span>
-                    <span className="text-gray-400 ml-1 text-xs">{mat.unit}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5
-                      ${mat.status === 'In Stock' ? 'bg-green-100 text-green-700' : 
-                        mat.status === 'Low Stock' ? 'bg-orange-100 text-orange-700' : 
-                        'bg-red-100 text-red-700'}`}>
-                      {mat.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button className="p-1.5 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+        <div className="overflow-x-auto flex-1 pb-20"> {/* pb-20 to avoid floating button overlap */}
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-gray-400 font-medium">Loading materials...</div>
+            </div>
+          ) : filteredMaterials.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-300" />
+              </div>
+              <p className="font-medium text-gray-500 text-base">No materials found.</p>
+              <p className="text-sm mt-1">Try a different search term or add a new one.</p>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead>
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Item ID</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Stock</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination Footer */}
-        <div className="p-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-          <p>Showing 1 to 5 of 2,451 entries</p>
-          <div className="flex gap-1">
-            <button className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50" disabled>Prev</button>
-            <button className="px-3 py-1 bg-[#166534] text-white rounded font-medium">1</button>
-            <button className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50">2</button>
-            <button className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50">3</button>
-            <button className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50">Next</button>
-          </div>
+              </thead>
+              <tbody className="text-sm divide-y divide-gray-50">
+                {filteredMaterials.map((mat, index) => {
+                  const status = getStatus(mat.stocks);
+                  return (
+                    <tr key={mat.id} className="hover:bg-gray-50/80 transition-colors group">
+                      <td className="px-6 py-4 font-mono text-[11px] font-semibold text-gray-400 tracking-wider">
+                        MAT-{String(index + 1).padStart(3, '0')}
+                      </td>
+                      <td className="px-6 py-4 font-bold text-gray-800">{mat.name}</td>
+                      <td className="px-6 py-4 text-gray-600 capitalize font-medium">{mat.category}</td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="font-bold text-gray-700 text-base">{mat.stocks}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase inline-flex items-center ${status.class}`}>
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button 
+                            onClick={() => openModal('view', mat)}
+                            title="View"
+                            className="p-1.5 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-shadow active:scale-95 shadow-sm"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => openModal('edit', mat)}
+                            title="Edit"
+                            className="p-1.5 text-amber-500 bg-amber-50 hover:bg-amber-100 rounded-md transition-shadow active:scale-95 shadow-sm"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(mat.id)}
+                            title="Delete"
+                            className="p-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-md transition-shadow active:scale-95 shadow-sm"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
+
+
+
+      {/* Modern Small Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in-up">
+          <div className="bg-white w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden relative transform scale-100 transition-transform">
+            
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="font-bold text-gray-800 text-lg">
+                {modalMode === 'add' ? 'Add Material' : modalMode === 'edit' ? 'Edit Material' : 'View Material'}
+              </h3>
+              <button 
+                onClick={closeModal}
+                className="w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="space-y-4">
+                
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Item Name</label>
+                  <input 
+                    type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    disabled={modalMode === 'view'}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-medium"
+                    placeholder="e.g. Printer Paper"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Category</label>
+                    <select 
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      disabled={modalMode === 'view'}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-medium"
+                      required
+                    >
+                      <option value="">Select...</option>
+                      <option value="furniture">Furniture</option>
+                      <option value="electronics">Electronics</option>
+                      <option value="supplies">Supplies</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Stock Qty</label>
+                    <input 
+                      type="number" 
+                      value={formData.stocks}
+                      onChange={(e) => setFormData({...formData, stocks: e.target.value})}
+                      disabled={modalMode === 'view'}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none disabled:opacity-70 disabled:bg-gray-100 font-bold"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Description</label>
+                  <textarea 
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    disabled={modalMode === 'view'}
+                    rows={2}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none resize-none disabled:opacity-70 disabled:bg-gray-100"
+                    placeholder="Brief details..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                {modalMode !== 'view' ? (
+                  <button 
+                    type="submit" 
+                    disabled={saving}
+                    className="w-full bg-[#166534] hover:bg-[#14532d] text-white py-3 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                  >
+                    <Save className="w-5 h-5" />
+                    {saving ? 'Saving...' : 'Save Material'}
+                  </button>
+                ) : (
+                  <button 
+                    type="button" 
+                    onClick={closeModal}
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.98]"
+                  >
+                    Close View
+                  </button>
+                )}
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

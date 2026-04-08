@@ -19,6 +19,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/materials" element={<Materials />} />
           <Route path="/add-material" element={<AddMaterial />} />
+          <Route path="/edit-material/:id" element={<AddMaterial />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
         
