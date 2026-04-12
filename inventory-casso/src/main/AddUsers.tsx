@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { UserPlus, X, Save, Pencil, Trash2, Search, Settings2 } from 'lucide-react';
+import { UserPlus, X, Save, Trash2, Search, Settings2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
@@ -295,7 +295,7 @@ export default function AddUser() {
           </div>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="flex items-center gap-2 text-sm font-semibold text-white bg-[#166534] px-5 py-1.5 rounded-md hover:bg-[#14532d] transition-all active:scale-95 shadow-sm"
+            className="flex items-center gap-2 text-sm font-semibold text-white bg-[#166534] px-5 py-1.5 rounded-md hover:bg-[#14532d] transition-all active:scale-95 shadow-sm cursor-pointer  "
           >
             <UserPlus className="w-4 h-4" />
             Add User
