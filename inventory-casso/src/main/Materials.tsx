@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Settings2, Trash, BookOpen, X, Save, Camera, Plus, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
+import { TableSkeleton } from '../components/SkeletonLoader';
 
 interface Material {
   id: string;
@@ -239,9 +240,7 @@ export default function Materials() {
         {/* Table */}
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-gray-400 font-medium">Loading materials...</div>
-            </div>
+            <TableSkeleton rows={10} cols={8} />
           ) : filteredMaterials.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">

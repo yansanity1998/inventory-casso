@@ -3,6 +3,7 @@ import { UserPlus, X, Save, Trash2, Search, Settings2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
+import { TableSkeleton } from '../components/SkeletonLoader';
 
 interface UserProfile {
   id: string;
@@ -267,8 +268,10 @@ export default function AddUser() {
 
   if (checkingAccess) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500">Loading...</div>
+      <div className="flex flex-col space-y-4 relative w-full max-w-full">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden p-8">
+          <TableSkeleton rows={5} cols={4} />
+        </div>
       </div>
     );
   }
@@ -316,9 +319,7 @@ export default function AddUser() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">Loading...</td>
-                </tr>
+                <TableSkeleton rows={5} cols={4} />
               ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No users found</td>

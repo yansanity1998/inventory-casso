@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Package, TrendingUp, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { StatsSkeleton, CardSkeleton, TableSkeleton } from '../components/SkeletonLoader';
 
 interface Material {
   id: string;
@@ -116,6 +117,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
+      {loading ? <StatsSkeleton /> : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
@@ -136,13 +138,14 @@ export default function Dashboard() {
           );
         })}
       </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Bar Chart - Stock by Category */}
         <div className="bg-white rounded-md p-5 shadow-sm border border-gray-200">
           <h3 className="text-base font-bold text-gray-800 font-[var(--heading)] mb-4">Stock by Category</h3>
           {loading ? (
-            <div className="h-40 flex items-center justify-center text-gray-400">Loading...</div>
+            <CardSkeleton />
           ) : categoryLabels.length === 0 ? (
             <div className="h-40 flex items-center justify-center text-gray-400">No data available</div>
           ) : (
@@ -173,7 +176,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-md p-5 shadow-sm border border-gray-200">
           <h3 className="text-base font-bold text-gray-800 font-[var(--heading)] mb-4">Stock Status Distribution</h3>
           {loading ? (
-            <div className="h-40 flex items-center justify-center text-gray-400">Loading...</div>
+            <CardSkeleton />
           ) : (
             <div className="flex items-center justify-center">
               <div className="relative w-32 h-32">
@@ -245,7 +248,7 @@ export default function Dashboard() {
           </div>
         </div>
         {loading ? (
-          <div className="h-40 flex items-center justify-center text-gray-400">Loading...</div>
+          <CardSkeleton />
         ) : sortedDates.length === 0 ? (
           <div className="h-40 flex items-center justify-center text-gray-400">No data available</div>
         ) : (
@@ -323,7 +326,7 @@ export default function Dashboard() {
         <div className="p-4">
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="text-center text-gray-400 py-8">Loading...</div>
+              <TableSkeleton rows={5} />
             ) : recentMaterials.length === 0 ? (
               <div className="text-center text-gray-400 py-8">No recent activity</div>
             ) : (
