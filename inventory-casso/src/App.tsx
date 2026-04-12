@@ -18,8 +18,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/materials" element={<Materials />} />
-          <Route path="/add-material" element={<AddUser />} />
-          <Route path="/edit-material/:id" element={<AddUser />} />
+          <Route path="/add-user" element={<AddUser />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
         

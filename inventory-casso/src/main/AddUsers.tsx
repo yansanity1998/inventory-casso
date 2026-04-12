@@ -12,8 +12,10 @@ export default function AddUser() {
   
   const [formData, setFormData] = useState({
     email: '',
+    fullName: '',
     password: '',
     confirmPassword: '',
+    role: 'user',
   });
 
   useEffect(() => {
@@ -30,9 +32,11 @@ export default function AddUser() {
         .eq('id', session.user.id)
         .single();
 
-      const role = !error ? data?.role : null;
-      if (role !== 'admin') {
-        showToast('Access denied', 'error');
+      const rawRole = (!error && data?.role) ? data.role.toLowerCase().trim() : 'user';
+      const isAdmin = rawRole === 'admin' || rawRole === 'administrator';
+
+      if (!isAdmin) {
+        showToast('Access denied: Admin privileges required', 'error');
         navigate('/dashboard', { replace: true });
         return;
       }
@@ -46,7 +50,7 @@ export default function AddUser() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.email || !formData.fullName || !formData.password || !formData.confirmPassword) {
       showToast('Please fill in required fields', 'error');
       return;
     }
@@ -59,13 +63,28 @@ export default function AddUser() {
     setSaving(true);
     const { data: { session: adminSession } } = await supabase.auth.getSession();
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: {
         emailRedirectTo: window.location.origin,
       },
     });
+
+    if (signUpData?.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([{ 
+          id: signUpData.user.id, 
+          email: formData.email,
+          full_name: formData.fullName, 
+          role: formData.role 
+        }]);
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+      }
+    }
 
     if (adminSession) {
       const { error: restoreError } = await supabase.auth.setSession({
@@ -129,44 +148,68 @@ export default function AddUser() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6">
-              <div className="space-y-4">
-                
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Email</label>
-                  <input 
-                    type="email" 
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
-                    placeholder="e.g. user@domain.com"
-                    required
-                  />
-                </div>
+<div className="space-y-4">
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Full Name</label>
+                    <input 
+                      type="text" 
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
+                      placeholder="Enter full name"
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Password</label>
-                  <input 
-                    type="password" 
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
-                    placeholder="Enter password"
-                    required
-                  />
-                </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Email</label>
+                    <input 
+                      type="email" 
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
+                      placeholder="e.g. user@domain.com"
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Confirm Password</label>
-                  <input 
-                    type="password" 
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none resize-none"
-                    placeholder="Re-enter password"
-                    required
-                  />
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Role</label>
+                    <select 
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Password</label>
+                    <input 
+                      type="password" 
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
+                      placeholder="Enter password"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Confirm Password</label>
+                    <input 
+                      type="password" 
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none resize-none"
+                      placeholder="Re-enter password"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
               <div className="mt-8">
                 <button 

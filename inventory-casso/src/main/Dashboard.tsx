@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, CheckCircle2, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Material {
@@ -12,21 +12,16 @@ interface Material {
   created_at: string;
 }
 
+interface Profile {
+  full_name: string | null;
+  profile_picture_path: string | null;
+}
+
 export default function Dashboard() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [animate, setAnimate] = useState(false);
-
-  useEffect(() => {
-    fetchMaterials();
-  }, []);
-
-  useEffect(() => {
-    if (!loading) {
-      const timer = setTimeout(() => setAnimate(true), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const fetchMaterials = async () => {
     const { data } = await supabase
@@ -36,6 +31,30 @@ export default function Dashboard() {
     setMaterials(data || []);
     setLoading(false);
   };
+
+  const fetchProfile = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name, profile_picture_path')
+        .eq('id', session.user.id)
+        .single();
+      setProfile(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchMaterials();
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => setAnimate(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   const totalMaterials = materials.length;
   const totalStock = materials.reduce((sum, m) => sum + m.stocks, 0);
@@ -79,9 +98,21 @@ export default function Dashboard() {
 
   return (
     <div className="h-full flex flex-col space-y-6 animate-fade-in-up">
-      <div className="flex flex-col space-y-2 mb-2">
-        <h2 className="text-2xl font-bold text-gray-800 font-[var(--heading)]">Dashboard Overview</h2>
-        <p className="text-sm text-gray-500">Welcome back. Here is the latest summary of the inventory.</p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col space-y-2">
+          <h2 className="text-2xl font-bold text-gray-800 font-[var(--heading)]">Dashboard Overview</h2>
+          <p className="text-sm text-gray-500">Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}. Here is the latest summary of the inventory.</p>
+        </div>
+        <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-100">
+          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            {profile?.profile_picture_path ? (
+              <img src={profile.profile_picture_path} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-5 h-5 text-gray-400" />
+            )}
+          </div>
+          <span className="text-sm font-medium text-gray-700">{profile?.full_name || 'User'}</span>
+        </div>
       </div>
 
       {/* Stats Cards */}

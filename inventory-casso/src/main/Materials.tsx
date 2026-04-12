@@ -31,10 +31,6 @@ export default function Materials() {
     description: '',
   });
 
-  useEffect(() => {
-    fetchMaterials();
-  }, []);
-
   const fetchMaterials = async () => {
     const { data, error } = await supabase
       .from('materials')
@@ -48,6 +44,10 @@ export default function Materials() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this material?')) return;

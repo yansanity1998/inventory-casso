@@ -1,13 +1,21 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { LayoutDashboard, Package, PlusCircle, Settings, LogOut } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { LayoutDashboard, Package, PlusCircle, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logoUrl from '../assets/casso.png';
+
+interface Profile {
+  full_name: string | null;
+  profile_picture_path: string | null;
+}
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const [role, setRole] = useState<string | null>(null);
   const [roleLoaded, setRoleLoaded] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadRole = async (sessionOverride?: { user: { id: string } } | null) => {
@@ -19,16 +27,29 @@ export default function Sidebar() {
         return;
       }
 
-      const { data, error } = await supabase
+      const userId = session.user.id;
+      console.log('Loading profile for userId:', userId);
+
+      let { data, error } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
+        .select('role, full_name, profile_picture_path')
+        .eq('id', userId)
         .single();
 
-      if (!error) {
-        setRole(data?.role ?? null);
+      console.log('Profile load - data:', data, 'error:', error);
+
+      if (!error && data) {
+        const rawRole = (data?.role || 'user').toLowerCase().trim();
+        // Accept both 'admin' and 'administrator' as admin roles
+        const normalizedRole = (rawRole === 'admin' || rawRole === 'administrator') ? 'admin' : 'user';
+        
+        setRole(normalizedRole);
+        setProfile({ full_name: data?.full_name, profile_picture_path: data?.profile_picture_path });
+        console.log('Role loaded:', rawRole, '-> normalized to:', normalizedRole);
       } else {
-        setRole(null);
+        setRole('user');
+        setProfile(null);
+        console.log('Profile error or not found, defaulting to user. Error:', error);
       }
 
       setRoleLoaded(true);
@@ -49,10 +70,21 @@ export default function Sidebar() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Materials', path: '/materials', icon: Package },
-    ...(roleLoaded && role === 'admin' ? [{ name: 'Add User', path: '/add-material', icon: PlusCircle }] : []),
+    ...(roleLoaded && role === 'admin' ? [{ name: 'Add User', path: '/add-user', icon: PlusCircle }] : []),
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
@@ -105,17 +137,40 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Sidebar Footer / Logout */}
-      <div className="p-4 border-t border-white/10">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-red-500/20 hover:text-red-300 transition-all group  cursor-pointer"
-        >
-          <div className="p-1.5 rounded-md bg-white/5 group-hover:bg-red-500/20r">
-            <LogOut className="w-4 h-4 text-green-400 group-hover:text-red-300 transition-colors " />
-          </div>
-          Logout
-        </button>
+      {/* Sidebar Footer / User Dropdown */}
+      <div className="p-4 border-t border-white/10" ref={dropdownRef}>
+        <div className="relative">
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 transition-all group cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-green-500/30 flex items-center justify-center">
+                {profile?.profile_picture_path ? (
+                  <img src={profile.profile_picture_path} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  <span className="text-sm font-medium text-white">
+                    {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : '?'}
+                  </span>
+                )}
+              </div>
+              <span className="truncate text-left">{profile?.full_name || 'User'}</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#1a3a2a] rounded-lg shadow-lg border border-white/10 overflow-hidden">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-white/70 hover:bg-red-500/20 hover:text-red-300 transition-all cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );
