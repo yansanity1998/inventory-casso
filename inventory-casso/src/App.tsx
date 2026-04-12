@@ -3,7 +3,7 @@ import LandingPage from './auth/LandingPage';
 import Layout from './main/Layout';
 import Dashboard from './main/Dashboard';
 import Materials from './main/Materials';
-import AddMaterial from './main/AddMaterial';
+import AddUser from './main/AddUsers';
 import Settings from './main/Settings';
 import { ToastContainer } from './components/Toast';
 import './App.css';
@@ -18,8 +18,8 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/materials" element={<Materials />} />
-          <Route path="/add-material" element={<AddMaterial />} />
-          <Route path="/edit-material/:id" element={<AddMaterial />} />
+          <Route path="/add-material" element={<AddUser />} />
+          <Route path="/edit-material/:id" element={<AddUser />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
         

@@ -1,14 +1,58 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { LayoutDashboard, Package, PlusCircle, Settings, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logoUrl from '../assets/casso.png';
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const [role, setRole] = useState<string | null>(null);
+  const [roleLoaded, setRoleLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadRole = async (sessionOverride?: { user: { id: string } } | null) => {
+      const session = sessionOverride ?? (await supabase.auth.getSession()).data.session;
+
+      if (!session) {
+        setRole(null);
+        setRoleLoaded(true);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!error) {
+        setRole(data?.role ?? null);
+      } else {
+        setRole(null);
+      }
+
+      setRoleLoaded(true);
+    };
+
+    loadRole();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      loadRole(session);
+    });
+
+    const onRoleRefresh = () => loadRole();
+    window.addEventListener('casso:refresh-role', onRoleRefresh);
+
+    return () => {
+      window.removeEventListener('casso:refresh-role', onRoleRefresh);
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Materials', path: '/materials', icon: Package },
-    { name: 'Add Material', path: '/add-material', icon: PlusCircle },
+    ...(roleLoaded && role === 'admin' ? [{ name: 'Add User', path: '/add-material', icon: PlusCircle }] : []),
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 

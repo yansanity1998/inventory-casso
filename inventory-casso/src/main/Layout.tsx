@@ -21,7 +21,7 @@ export default function Layout() {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate('/', { replace: true });
       }

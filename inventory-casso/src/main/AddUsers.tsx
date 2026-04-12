@@ -1,60 +1,108 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, X, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
 
-export default function AddMaterial() {
+export default function AddUser() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   
   const [formData, setFormData] = useState({
-    material_id: '',
-    name: '',
-    category: '',
-    stocks: '',
-    description: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
   });
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/', { replace: true });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      const role = !error ? data?.role : null;
+      if (role !== 'admin') {
+        showToast('Access denied', 'error');
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
+      setCheckingAccess(false);
+    };
+
+    checkAccess();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.material_id || !formData.name || !formData.category) {
+    if (!formData.email || !formData.password || !formData.confirmPassword) {
       showToast('Please fill in required fields', 'error');
       return;
     }
 
-    setSaving(true);
-    const materialData = {
-      material_id: formData.material_id,
-      name: formData.name,
-      category: formData.category,
-      stocks: parseInt(formData.stocks) || 0,
-      description: formData.description,
-    };
+    if (formData.password !== formData.confirmPassword) {
+      showToast('Passwords do not match', 'error');
+      return;
+    }
 
-    const { error } = await supabase.from('materials').insert(materialData);
+    setSaving(true);
+    const { data: { session: adminSession } } = await supabase.auth.getSession();
+
+    const { error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (adminSession) {
+      const { error: restoreError } = await supabase.auth.setSession({
+        access_token: adminSession.access_token,
+        refresh_token: adminSession.refresh_token,
+      });
+
+      if (restoreError) {
+        showToast('Created user, but failed to restore admin session. Please re-login.', 'error');
+      } else {
+        window.dispatchEvent(new Event('casso:refresh-role'));
+      }
+    }
     
     setSaving(false);
 
     if (error) {
       showToast(error.message, 'error');
     } else {
-      showToast('Material added successfully!', 'success');
+      showToast('User added successfully!', 'success');
       setIsModalOpen(false);
-      // Automatically route back to materials table after successful add
-      navigate('/materials');
+      navigate('/dashboard');
     }
   };
 
   return (
+    checkingAccess ? (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    ) : (
     <div className="h-full flex flex-col items-center justify-center p-8 relative">
       
       {/* Huge Plus Icon Button as requested */}
       <div className="text-center flex flex-col items-center">
-        <h2 className="text-3xl text-gray-800 font-[var(--heading)] tracking-tight mb-2">New Entry</h2>
-        <p className="text-gray-500 mb-10 max-w-sm">Click the button below to register a brand new item into the inventory system.</p>
+        <h2 className="text-3xl text-gray-800 font-[var(--heading)] tracking-tight mb-2">New User</h2>
+        <p className="text-gray-500 mb-10 max-w-sm">Click the button below to create a new user account for the system.</p>
         
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -71,7 +119,7 @@ export default function AddMaterial() {
           <div className="bg-white w-full max-w-sm rounded-lg shadow-2xl overflow-hidden relative transform scale-100 transition-transform border border-gray-200">
             
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <h3 className="font-bold text-gray-800 text-lg">Add Material</h3>
+              <h3 className="font-bold text-gray-800 text-lg">Add User</h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
                 className="w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
@@ -84,68 +132,39 @@ export default function AddMaterial() {
               <div className="space-y-4">
                 
                 <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Material ID</label>
+                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Email</label>
                   <input 
-                    type="text" 
-                    value={formData.material_id}
-                    onChange={(e) => setFormData({...formData, material_id: e.target.value})}
+                    type="email" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
-                    placeholder="e.g. MAT-001"
+                    placeholder="e.g. user@domain.com"
                     required
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Item Name</label>
+                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Password</label>
                   <input 
-                    type="text" 
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    type="password" 
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
-                    placeholder="e.g. Printer Paper"
+                    placeholder="Enter password"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Category</label>
-                    <select 
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-medium"
-                      required
-                    >
-                      <option value="">Select...</option>
-                      <option value="furniture">Furniture</option>
-                      <option value="electronics">Electronics</option>
-                      <option value="supplies">Supplies</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Stock Qty</label>
-                    <input 
-                      type="number" 
-                      value={formData.stocks}
-                      onChange={(e) => setFormData({...formData, stocks: e.target.value})}
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none font-bold"
-                      placeholder="0"
-                      min="0"
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Description</label>
-                  <textarea 
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    rows={2}
+                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Confirm Password</label>
+                  <input 
+                    type="password" 
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/20 focus:border-[#166534] transition-all outline-none resize-none"
-                    placeholder="Brief details..."
-                  ></textarea>
+                    placeholder="Re-enter password"
+                    required
+                  />
                 </div>
               </div>
 
@@ -156,7 +175,7 @@ export default function AddMaterial() {
                   className="w-full bg-[#166534] hover:bg-[#14532d] text-white py-3 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                 >
                   <Save className="w-5 h-5" />
-                  {saving ? 'Adding...' : 'Add Material'}
+                  {saving ? 'Adding...' : 'Add User'}
                 </button>
               </div>
             </form>
@@ -165,5 +184,6 @@ export default function AddMaterial() {
         </div>
       )}
     </div>
+    )
   );
 }
