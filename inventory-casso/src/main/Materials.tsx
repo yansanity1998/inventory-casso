@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, Edit2, Trash2, Eye, X, Save } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Edit2, Trash2, Eye, X, Save, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
 
@@ -10,6 +10,7 @@ interface Material {
   category: string;
   stocks: number;
   description: string;
+  picture: string | null;
 }
 
 export default function Materials() {
@@ -29,7 +30,9 @@ export default function Materials() {
     category: '',
     stocks: '',
     description: '',
+    picture: '',
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchMaterials = async () => {
     const { data, error } = await supabase
@@ -72,11 +75,23 @@ export default function Materials() {
         category: material.category,
         stocks: material.stocks.toString(),
         description: material.description || '',
+        picture: material.picture || '',
       });
     } else {
-      setFormData({ id: '', material_id: '', name: '', category: '', stocks: '', description: '' });
+      setFormData({ id: '', material_id: '', name: '', category: '', stocks: '', description: '', picture: '' });
     }
     setIsModalOpen(true);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFormData({ ...formData, picture: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const closeModal = () => setIsModalOpen(false);
@@ -100,6 +115,7 @@ export default function Materials() {
       category: formData.category,
       stocks: parseInt(formData.stocks) || 0,
       description: formData.description,
+      picture: formData.picture || null,
     };
 
     let error;
@@ -180,6 +196,7 @@ export default function Materials() {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
                   <th className="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Item ID</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Picture</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Category</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider text-right">Stock</th>
@@ -194,6 +211,15 @@ export default function Materials() {
                     <tr key={mat.id} className="hover:bg-gray-50/50 transition-colors group border-b border-gray-50 last:border-0">
                       <td className="px-6 py-4 font-mono text-xs text-gray-400 font-bold">
                         {mat.material_id || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+                          {mat.picture ? (
+                            <img src={mat.picture} alt={mat.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-gray-400 text-xs">No img</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 font-bold text-gray-800 text-sm">{mat.name}</td>
                       <td className="px-6 py-4 text-gray-600 capitalize text-sm font-semibold">{mat.category}</td>
@@ -259,10 +285,50 @@ export default function Materials() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6">
-              <div className="space-y-4">
+<div className="space-y-4">
                 
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Material ID</label>
+                {modalMode !== 'view' ? (
+                  <div className="flex flex-col items-center">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider mb-2">Picture</label>
+                    <div className="relative">
+                      <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                        {formData.picture ? (
+                          <img src={formData.picture} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <Camera className="w-8 h-8 text-gray-300" />
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-0 right-0 w-8 h-8 bg-[#166534] text-white rounded-lg flex items-center justify-center shadow-md hover:bg-[#14532d]"
+                      >
+                        <Camera className="w-4 h-4" />
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider mb-2">Picture</label>
+                    <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                      {formData.picture ? (
+                        <img src={formData.picture} alt={formData.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-gray-400 text-xs">No picture</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                 <div className="space-y-1.5">
+                   <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Material ID</label>
                   <input 
                     type="text" 
                     value={formData.material_id}
