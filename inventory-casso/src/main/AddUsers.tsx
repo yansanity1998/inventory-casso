@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, Save } from 'lucide-react';
+import { UserPlus, X, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
@@ -110,29 +110,29 @@ export default function AddUser() {
     }
   };
 
-  return (
-    checkingAccess ? (
+  if (checkingAccess) {
+    return (
       <div className="flex items-center justify-center h-full">
         <div className="text-gray-500">Loading...</div>
       </div>
-    ) : (
-    <div className="h-full flex flex-col items-center justify-center p-8 relative">
-      
-      {/* Huge Plus Icon Button as requested */}
-      <div className="text-center flex flex-col items-center">
-        <h2 className="text-3xl text-gray-800 font-[var(--heading)] tracking-tight mb-2">New User</h2>
-        <p className="text-gray-500 mb-10 max-w-sm">Click the button below to create a new user account for the system.</p>
-        
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="group relative flex items-center justify-center w-32 h-32 bg-[#166534] hover:bg-[#14532d] shadow-2xl hover:shadow-[0_8px_40px_rgba(22,101,52,0.5)] rounded-full transition-all duration-300 hover:scale-105 active:scale-95"
-        >
-          <div className="absolute inset-0 bg-gradient-to-tr from-black/0 via-white/5 to-white/20 rounded-full"></div>
-          <Plus className="w-16 h-16 text-white group-hover:rotate-90 transition-transform duration-500" />
-        </button>
-      </div>
+    );
+  }
 
-      {/* Modern Small Modal */}
+  return (
+    <div className="h-full flex flex-col p-8">
+      <div className="flex flex-col space-y-2 mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 font-[var(--heading)]">Add User</h2>
+        <p className="text-sm text-gray-500">Create a new user account for the system.</p>
+      </div>
+      
+      <button 
+        onClick={() => setIsModalOpen(true)}
+        className="self-start flex items-center gap-3 px-4 py-3 bg-[#166534] hover:bg-[#14532d] text-white rounded-lg shadow-md hover:shadow-lg transition-all"
+      >
+        <UserPlus className="w-5 h-5" />
+        <span className="font-medium">Add New User</span>
+      </button>
+
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in-up">
           <div className="bg-white w-full max-w-sm rounded-lg shadow-2xl overflow-hidden relative transform scale-100 transition-transform border border-gray-200">
@@ -227,6 +227,5 @@ export default function AddUser() {
         </div>
       )}
     </div>
-    )
   );
 }

@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
-import { LayoutDashboard, Package, PlusCircle, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Package, UserPlus, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logoUrl from '../assets/casso.png';
 
@@ -42,7 +42,7 @@ export default function Sidebar() {
         const rawRole = (data?.role || 'user').toLowerCase().trim();
         // Accept both 'admin' and 'administrator' as admin roles
         const normalizedRole = (rawRole === 'admin' || rawRole === 'administrator') ? 'admin' : 'user';
-        
+
         setRole(normalizedRole);
         setProfile({ full_name: data?.full_name, profile_picture_path: data?.profile_picture_path });
         console.log('Role loaded:', rawRole, '-> normalized to:', normalizedRole);
@@ -84,7 +84,7 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Materials', path: '/materials', icon: Package },
-    ...(roleLoaded && role === 'admin' ? [{ name: 'Add User', path: '/add-user', icon: PlusCircle }] : []),
+    ...(roleLoaded && role === 'admin' ? [{ name: 'Add User', path: '/add-user', icon: UserPlus }] : []),
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
