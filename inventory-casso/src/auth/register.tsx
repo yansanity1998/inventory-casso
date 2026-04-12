@@ -25,31 +25,52 @@ export default function Register({ onModeChange }: RegisterProps) {
 
     setLoading(true);
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
 
-    setLoading(false);
-
-    if (signUpError) {
-      showToast(signUpError.message, 'error');
-      setError(signUpError.message);
-    } else if (signUpData.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{ id: signUpData.user.id, email, full_name: fullName, role: 'user' }]);
-
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
+      if (signUpError) {
+        setLoading(false);
+        showToast(signUpError.message, 'error');
+        setError(signUpError.message);
+        return;
       }
 
-      showToast('Account created successfully! Please login.', 'success');
-      onModeChange?.('login');
+      console.log('Signup result:', signUpData);
+
+      if (signUpData?.user) {
+        console.log('Creating profile for user:', signUpData.user.id, 'email:', email, 'fullName:', fullName);
+        
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert([{ 
+            id: signUpData.user.id, 
+            email, 
+            full_name: fullName, 
+            role: 'user',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }], { onConflict: 'id' });
+
+        console.log('Profile upsert result:', profileError);
+
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+        }
+
+        showToast('Account created successfully! Please login.', 'success');
+        onModeChange?.('login');
+      }
+    } catch (err) {
+      console.error('Signup error:', err);
     }
+
+    setLoading(false);
   };
 
   const handleLoginClick = () => {
