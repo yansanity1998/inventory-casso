@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Settings2, Trash, BookOpen, X, Save, Camera, Plus, ArrowUp, ArrowDown, ChevronsUpDown, Minus } from 'lucide-react';
+import { Search, Settings2, Trash, BookOpen, X, Save, Camera, Plus, ArrowUp, ArrowDown, ChevronsUpDown, Minus, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
 import { TableSkeleton } from '../components/SkeletonLoader';
@@ -311,6 +313,52 @@ export default function Materials() {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Header section
+    doc.setFontSize(18);
+    doc.setTextColor(22, 101, 52); // Project green
+    doc.text('Inventory CASSO System', 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Materials Inventory Report - Generated on ${new Date().toLocaleDateString()}`, 14, 30);
+    
+    const tableData = sortedMaterials.map(mat => [
+      mat.material_id || 'N/A',
+      mat.name,
+      mat.category,
+      mat.unit || '-',
+      mat.stocks.toString(),
+      getStatus(mat.stocks).label
+    ]);
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Item ID', 'Name', 'Category', 'Unit', 'Stock', 'Status']],
+      body: tableData,
+      headStyles: { 
+        fillColor: [22, 101, 52], // Project green
+        textColor: [255, 255, 255],
+        fontSize: 10,
+        fontStyle: 'bold'
+      },
+      styles: { 
+        fontSize: 9, 
+        cellPadding: 3,
+        valign: 'middle'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252] // Very light gray/blue
+      },
+      margin: { top: 40 }
+    });
+
+    doc.save(`Materials_Report_${new Date().getTime()}.pdf`);
+    showToast('PDF Exported Successfully', 'success');
+  };
+
   return (
     <div className="flex flex-col space-y-4 relative w-full max-w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -344,6 +392,13 @@ export default function Materials() {
           >
             <Minus className="w-4 h-4" />
             Deduct
+          </button>
+          <button
+            onClick={exportToPDF}
+            className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-gray-700 bg-white border border-gray-200 px-5 py-1.5 rounded-md hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
+          >
+            <FileDown className="w-4 h-4" />
+            PDF
           </button>
         </div>
       </div>
