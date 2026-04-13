@@ -3,6 +3,7 @@ import LandingPage from './auth/LandingPage';
 import Layout from './main/Layout';
 import Dashboard from './main/Dashboard';
 import Materials from './main/Materials';
+import Logs from './main/Logs';
 import AddUser from './main/AddUsers';
 import Settings from './main/Settings';
 import { ToastContainer } from './components/Toast';
@@ -18,6 +19,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/materials" element={<Materials />} />
+          <Route path="/materials/logs" element={<Logs />} />
           <Route path="/add-user" element={<AddUser />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

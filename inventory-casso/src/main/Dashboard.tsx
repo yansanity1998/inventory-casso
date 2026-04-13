@@ -379,7 +379,7 @@ export default function Dashboard() {
       {/* Stats Detail Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-2xl rounded-md shadow-xl overflow-hidden relative border border-gray-200 max-h-[80vh] flex flex-col">
+          <div className="bg-white w-full max-w-4xl rounded-md shadow-xl overflow-hidden relative border border-gray-200 max-h-[85vh] flex flex-col">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
               <h3 className="font-bold text-gray-800 text-base">{selectedStat} Details</h3>
               <button
@@ -394,11 +394,11 @@ export default function Dashboard() {
                 <thead className="sticky top-0 bg-[#f8fafc]">
                   <tr className="border-b border-gray-200">
                     <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Item ID</th>
-                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-right">Unit</th>
-                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-right">Added By</th>
-                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-right">Stock</th>
+                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-left">Name</th>
+                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-left">Category</th>
+                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-center">Unit</th>
+                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-left">Added By</th>
+                    <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-center">Stock</th>
                     <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
@@ -407,18 +407,18 @@ export default function Dashboard() {
                     const status = getStatus(mat.stocks);
                     return (
                       <tr key={mat.id} className="hover:bg-slate-50 transition-colors border-b border-slate-100">
-                        <td className="px-6 py-2 font-mono text-[10px] text-slate-800 font-bold">{mat.material_id}</td>
+                        <td className="px-6 py-2 text-slate-800 text-sm whitespace-nowrap">{mat.material_id}</td>
                         <td className="px-6 py-2 text-slate-800 text-sm">{mat.name}</td>
                         <td className="px-6 py-2 text-slate-800 text-sm capitalize">{mat.category}</td>
-                        <td className="px-6 py-2 text-right text-slate-800 text-sm">{mat.unit || '-'}</td>
-                        <td className="px-6 py-2 text-right text-slate-800 text-sm">
+                        <td className="px-6 py-2 text-center text-slate-800 text-sm">{mat.unit || '-'}</td>
+                        <td className="px-6 py-2 text-slate-800 text-sm">
                             {Array.isArray(mat.profiles) 
                               ? (mat.profiles[0]?.full_name || '-') 
                               : (mat.profiles?.full_name || '-')}
                         </td>
-                        <td className="px-6 py-2 text-right text-slate-800 text-sm">{mat.stocks}</td>
+                        <td className="px-6 py-2 text-center text-slate-800 text-sm font-bold">{mat.stocks}</td>
                         <td className="px-6 py-2">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${status.class}`}>
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap shadow-sm ${status.class}`}>
                             {status.label}
                           </span>
                         </td>

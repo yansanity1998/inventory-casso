@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Settings2, Trash, BookOpen, X, Save, Camera, Plus, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react';
+import { Search, Settings2, Trash, BookOpen, X, Save, Camera, Plus, ArrowUp, ArrowDown, ChevronsUpDown, Minus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
 import { TableSkeleton } from '../components/SkeletonLoader';
@@ -14,9 +14,7 @@ interface Material {
   description: string;
   picture: string | null;
   added_by: string | null;
-  profiles?: {
-    full_name: string | null;
-  };
+  profiles?: any;
 }
 
 export default function Materials() {
@@ -36,6 +34,14 @@ export default function Materials() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
+  // Deduction Modal State
+  const [showDeductModal, setShowDeductModal] = useState(false);
+  const [deductSearch, setDeductSearch] = useState('');
+  const [selectedDeductItem, setSelectedDeductItem] = useState<Material | null>(null);
+  const [deductQty, setDeductQty] = useState('');
+  const [deductReason, setDeductReason] = useState('');
+  const [deducting, setDeducting] = useState(false);
+
   const [formData, setFormData] = useState({
     id: '',
     material_id: '',
@@ -51,7 +57,7 @@ export default function Materials() {
   const fetchMaterials = async () => {
     const { data, error } = await supabase
       .from('materials')
-      .select('*, profiles:created_by(full_name)')
+      .select('*, profiles!created_by(full_name)')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -97,6 +103,89 @@ export default function Materials() {
     setShowDeleteConfirm(false);
     setItemToDelete(null);
   };
+
+  const handleDeduct = async () => {
+    if (!selectedDeductItem || !deductQty || parseInt(deductQty) <= 0) {
+      showToast('Please select an item and enter a valid quantity', 'error');
+      return;
+    }
+
+    const qty = parseInt(deductQty);
+    if (qty > selectedDeductItem.stocks) {
+      showToast('Cannot deduct more than available stock', 'error');
+      return;
+    }
+
+    setDeducting(true);
+    const newStock = selectedDeductItem.stocks - qty;
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // 1. Update the stock
+    const { error: updateError } = await supabase
+      .from('materials')
+      .update({ stocks: newStock })
+      .eq('id', selectedDeductItem.id);
+
+    if (updateError) {
+      showToast('Failed to update stock', 'error');
+      setDeducting(false);
+      return;
+    }
+
+    // 2. Create the log entry
+    const { error: logError } = await supabase
+      .from('material_logs')
+      .insert({
+        material_id: selectedDeductItem.id,
+        material_name: selectedDeductItem.name,
+        action_type: 'deduction',
+        quantity: qty,
+        reason: deductReason || 'No reason provided',
+        user_id: user?.id
+      });
+
+    setDeducting(false);
+
+    if (logError) {
+      console.error('Logging error:', logError);
+      showToast(`Error saving log: ${logError.message}`, 'error');
+    } else {
+      showToast(`Deducted ${qty} ${selectedDeductItem.unit} from ${selectedDeductItem.name}`, 'success');
+    }
+
+    setShowDeductModal(false);
+    setSelectedDeductItem(null);
+    setDeductQty('');
+    setDeductReason('');
+    setDeductSearch('');
+    fetchMaterials();
+  };
+
+  const openDeductModal = () => {
+    setShowDeductModal(true);
+    setDeductSearch('');
+    setSelectedDeductItem(null);
+    setDeductQty('');
+    setDeductReason('');
+  };
+
+  const closeDeductModal = () => {
+    setShowDeductModal(false);
+    setSelectedDeductItem(null);
+    setDeductQty('');
+    setDeductReason('');
+    setDeductSearch('');
+  };
+
+  const filteredDeductItems = materials.filter((mat) =>
+    deductSearch === '' || (
+      mat.name.toLowerCase().includes(deductSearch.toLowerCase()) ||
+      mat.category.toLowerCase().includes(deductSearch.toLowerCase()) ||
+      (mat.material_id && mat.material_id.toLowerCase().includes(deductSearch.toLowerCase()))
+    )
+  );
 
   const openModal = (mode: 'add' | 'edit' | 'view', material?: Material) => {
     setModalMode(mode);
@@ -249,10 +338,17 @@ export default function Materials() {
             <Plus className="w-4 h-4" />
             Add Item
           </button>
+          <button
+            onClick={openDeductModal}
+            className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-white bg-red-600 px-5 py-1.5 rounded-md hover:bg-red-700 transition-all active:scale-95 shadow-sm"
+          >
+            <Minus className="w-4 h-4" />
+            Deduct
+          </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 mt-4 overflow-hidden">
         {/* Table */}
         <div className="overflow-x-auto">
           {loading ? (
@@ -277,7 +373,7 @@ export default function Materials() {
                   <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Added By</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider text-right cursor-pointer select-none group" onClick={() => handleSort('stocks')}>
                     <span className="flex items-center justify-end gap-1">
-                      Stock 
+                      Stock
                       {sortConfig?.key === 'stocks' ? (
                         sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-orange-500" /> : <ArrowDown className="w-3 h-3 text-orange-500" />
                       ) : (
@@ -287,7 +383,7 @@ export default function Materials() {
                   </th>
                   <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider cursor-pointer select-none group" onClick={() => handleSort('stocks')}>
                     <span className="flex items-center gap-1">
-                      Status 
+                      Status
                       {sortConfig?.key === 'stocks' ? (
                         sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-orange-500" /> : <ArrowDown className="w-3 h-3 text-orange-500" />
                       ) : (
@@ -319,8 +415,8 @@ export default function Materials() {
                       <td className="px-6 py-1.5 text-slate-800 text-sm">{mat.category}</td>
                       <td className="px-6 py-1.5 text-slate-800 text-sm">{mat.unit || '-'}</td>
                       <td className="px-6 py-1.5 text-slate-800 text-sm">
-                        {Array.isArray(mat.profiles) 
-                          ? (mat.profiles[0]?.full_name || mat.added_by || '-') 
+                        {Array.isArray(mat.profiles)
+                          ? (mat.profiles[0]?.full_name || mat.added_by || '-')
                           : (mat.profiles?.full_name || mat.added_by || '-')}
                       </td>
                       <td className="px-6 py-1.5 text-right">
@@ -364,7 +460,7 @@ export default function Materials() {
             </table>
           )}
         </div>
-        
+
         {/* Pagination */}
         {sortedMaterials.length > 0 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white">
@@ -383,11 +479,10 @@ export default function Materials() {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    currentPage === page
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${currentPage === page
                       ? 'bg-[#166534] text-white'
                       : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
@@ -597,6 +692,135 @@ export default function Materials() {
                 className="flex-1 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors border-l border-gray-100"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deduction Modal */}
+      {showDeductModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-md shadow-xl overflow-hidden relative border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
+              <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
+                <Minus className="w-4 h-4 text-red-600" />
+                Deduct Material
+              </h3>
+              <button
+                onClick={closeDeductModal}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Search Materials */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Search Material</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, category, or ID..."
+                    value={deductSearch}
+                    onChange={(e) => {
+                      setDeductSearch(e.target.value);
+                      setSelectedDeductItem(null);
+                    }}
+                    className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal"
+                  />
+                </div>
+              </div>
+
+              {/* Material List */}
+              {!selectedDeductItem && (
+                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md divide-y divide-gray-100">
+                  {filteredDeductItems.length === 0 ? (
+                    <div className="p-4 text-center text-gray-400 text-sm">No materials found</div>
+                  ) : (
+                    filteredDeductItems.map((mat) => (
+                      <button
+                        key={mat.id}
+                        onClick={() => setSelectedDeductItem(mat)}
+                        className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">{mat.name}</p>
+                          <p className="text-xs text-gray-500">{mat.category} · {mat.material_id || 'N/A'}</p>
+                        </div>
+                        <span className="text-sm font-bold text-emerald-600">{mat.stocks} {mat.unit}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Selected Item */}
+              {selectedDeductItem && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">{selectedDeductItem.name}</p>
+                      <p className="text-xs text-gray-500">{selectedDeductItem.category} · {selectedDeductItem.material_id || 'N/A'}</p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedDeductItem(null)}
+                      className="text-xs text-red-500 hover:text-red-700 font-medium"
+                    >
+                      Change
+                    </button>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-emerald-200 flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Available Stock</span>
+                    <span className="text-sm font-bold text-emerald-700">{selectedDeductItem.stocks} {selectedDeductItem.unit}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Quantity Input */}
+              {selectedDeductItem && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Quantity to Deduct</label>
+                  <input
+                    type="number"
+                    placeholder="Enter quantity"
+                    value={deductQty}
+                    onChange={(e) => setDeductQty(e.target.value)}
+                    min="1"
+                    max={selectedDeductItem.stocks}
+                    className="w-full px-3 py-2 rounded-md border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Max: {selectedDeductItem.stocks} {selectedDeductItem.unit}
+                  </p>
+                </div>
+              )}
+
+              {/* Reason Input */}
+              {selectedDeductItem && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Reason (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Used for project, Damaged, Expired"
+                    value={deductReason}
+                    onChange={(e) => setDeductReason(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 pb-6">
+              <button
+                onClick={handleDeduct}
+                disabled={!selectedDeductItem || !deductQty || parseInt(deductQty) <= 0 || deducting || (selectedDeductItem && parseInt(deductQty) > selectedDeductItem.stocks)}
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-md text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+              >
+                <Minus className="w-4 h-4" />
+                {deducting ? 'Deducting...' : 'Confirm Deduction'}
               </button>
             </div>
           </div>

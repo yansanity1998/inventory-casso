@@ -81,9 +81,19 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [materialsOpen, setMaterialsOpen] = useState(false);
+
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Materials', path: '/materials', icon: Package },
+    { 
+      name: 'Materials', 
+      path: '/materials', 
+      icon: Package,
+      subItems: [
+        { name: 'Overview', path: '/materials' },
+        { name: 'Logs', path: '/materials/logs' },
+      ]
+    },
     ...(roleLoaded && role === 'admin' ? [{ name: 'Add User', path: '/add-user', icon: UserPlus }] : []),
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
@@ -110,6 +120,43 @@ export default function Sidebar() {
       <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
+          if (item.subItems) {
+            return (
+              <div key={item.name} className="flex flex-col space-y-1">
+                <button
+                  onClick={() => setMaterialsOpen(!materialsOpen)}
+                  className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group text-white/70 hover:bg-white/10 hover:text-white cursor-pointer`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 transition-transform duration-200 group-hover:scale-110 text-white/70 group-hover:text-white" />
+                    <span>{item.name}</span>
+                  </div>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${materialsOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {materialsOpen && (
+                  <div className="ml-4 pl-4 border-l border-white/10 flex flex-col space-y-1 animate-in slide-in-from-top-2 duration-300">
+                    {item.subItems.map((sub) => (
+                      <NavLink
+                        key={sub.name}
+                        to={sub.path}
+                        end={sub.path === '/materials'}
+                        className={({ isActive }) =>
+                          `px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${isActive
+                            ? 'bg-white/10 text-white'
+                            : 'text-white/50 hover:text-white hover:bg-white/5'
+                          }`
+                        }
+                      >
+                        {sub.name}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           return (
             <NavLink
               key={item.name}
@@ -123,12 +170,10 @@ export default function Sidebar() {
             >
               {({ isActive }) => (
                 <>
-
                   <Icon
                     className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white' : 'text-white/70'
                       }`}
                   />
-
                   <span>{item.name}</span>
                 </>
               )}
