@@ -733,6 +733,11 @@ export default function Materials() {
                         <option value="">Select...</option>
                         <option value="pcs">pcs</option>
                         <option value="box">box</option>
+                        <option value="box">box</option>
+                        <option value="bottle">bottle</option>
+                        <option value="gallon">gallon</option>
+                        <option value="rolls">rolls</option>
+                        <option value="pack">pack</option>
                       </select>
                     </div>
 
