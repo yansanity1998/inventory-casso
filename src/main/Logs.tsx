@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, FileDown, Trash, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { TableSkeleton } from '../components/SkeletonLoader';
@@ -7,6 +8,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function Logs() {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -192,7 +194,11 @@ export default function Logs() {
               </thead>
               <tbody className="text-sm divide-y divide-gray-50">
                 {currentLogs.map((log, index) => (
-                  <tr key={log.id} className={`hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                  <tr 
+                    key={log.id} 
+                    onClick={() => log.material_id && navigate('/materials', { state: { highlightItemId: log.material_id } })}
+                    className={`hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                  >
                     <td className="px-6 py-3 text-gray-500 text-xs">
                       {new Date(log.created_at).toLocaleString('en-US', { 
                         month: 'short', 
@@ -220,9 +226,9 @@ export default function Logs() {
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-center gap-0.5">
                         <button
-                          onClick={() => handleDeleteClick(log)}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(log); }}
                           title="Delete log"
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                         >
                           <Trash className="w-4 h-4" />
                         </button>

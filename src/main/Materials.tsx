@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, Settings2, Trash, BookOpen, X, Save, Camera, Plus, ArrowUp, ArrowDown, ChevronsUpDown, Minus, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -20,6 +21,8 @@ interface Material {
 }
 
 export default function Materials() {
+  const location = useLocation();
+  const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,6 +375,25 @@ export default function Materials() {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  useEffect(() => {
+    if (location.state?.highlightItemId && sortedMaterials.length > 0) {
+      const targetId = location.state.highlightItemId;
+      setHighlightItemId(targetId);
+      
+      const itemIndex = sortedMaterials.findIndex(m => m.id === targetId || m.material_id === targetId);
+      if (itemIndex !== -1) {
+         const targetPage = Math.floor(itemIndex / itemsPerPage) + 1;
+         setCurrentPage(targetPage);
+      }
+      
+      const timer = setTimeout(() => {
+        setHighlightItemId(null);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location.state?.highlightItemId, materials.length]);
+
   const exportToPDF = () => {
     const doc = new jsPDF();
 
@@ -520,8 +542,12 @@ export default function Materials() {
               <tbody className="text-sm divide-y divide-gray-50">
                 {paginatedMaterials.map((mat, index) => {
                   const status = getStatus(mat.stocks);
+                  const isHighlighted = mat.id === highlightItemId || mat.material_id === highlightItemId;
                   return (
-                    <tr key={mat.id} className={`hover:bg-slate-50 transition-colors group border-b border-slate-100 last:border-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                    <tr 
+                      key={mat.id} 
+                      className={`transition-all duration-500 group border-b border-slate-100 last:border-0 ${isHighlighted ? 'bg-yellow-200 hover:bg-yellow-300' : (index % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-gray-50 hover:bg-slate-50')}`}
+                    >
                       <td className="px-6 py-1.5 font-mono text-[10px] text-slate-800 font-bold tracking-tight">
                         {mat.material_id || 'N/A'}
                       </td>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package, TrendingUp, AlertTriangle, CheckCircle2, X, FileDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { StatsSkeleton, CardSkeleton, TableSkeleton } from '../components/SkeletonLoader';
@@ -20,6 +21,7 @@ interface Material {
 
 interface LogEntry {
   id: string;
+  material_id: string;
   material_name: string;
   action_type: string;
   quantity: number;
@@ -31,6 +33,7 @@ interface LogEntry {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -548,7 +551,12 @@ export default function Dashboard() {
                   {recentMaterials.map((mat) => {
                     const status = getStatus(mat.stocks);
                     return (
-                      <tr key={mat.id} className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
+                      <tr 
+                        key={mat.id} 
+                        onClick={() => navigate('/materials', { state: { highlightItemId: mat.id } })}
+                        title="Click to view in Materials"
+                        className="hover:bg-yellow-50 transition-colors border-b border-slate-100 last:border-0 cursor-pointer"
+                      >
                         <td className="px-6 py-1.5 font-mono text-[10px] text-slate-800 font-bold tracking-tight">{mat.material_id}</td>
                         <td className="px-6 py-1.5 text-slate-800 text-sm">{mat.name}</td>
                         <td className="px-6 py-1.5 text-slate-800 text-sm capitalize">{mat.category}</td>
@@ -599,7 +607,12 @@ export default function Dashboard() {
                 </thead>
                 <tbody className="text-sm divide-y divide-gray-50">
                   {logs.slice(0, 5).map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
+                    <tr 
+                      key={log.id} 
+                      onClick={() => navigate('/materials', { state: { highlightItemId: log.material_id } })}
+                      title="Click to view in Materials"
+                      className="hover:bg-yellow-50 transition-colors border-b border-slate-100 last:border-0 cursor-pointer"
+                    >
                       <td className="px-6 py-1.5 text-gray-500 text-xs">
                         {new Date(log.created_at).toLocaleString('en-US', { 
                           month: 'short', 
@@ -673,7 +686,12 @@ export default function Dashboard() {
                   {getFilteredMaterials().map((mat) => {
                     const status = getStatus(mat.stocks);
                     return (
-                      <tr key={mat.id} className="hover:bg-slate-50 transition-colors border-b border-slate-100">
+                      <tr 
+                        key={mat.id} 
+                        onClick={() => { setIsModalOpen(false); navigate('/materials', { state: { highlightItemId: mat.id } }); }}
+                        title="Click to view in Materials"
+                        className="hover:bg-yellow-50 transition-colors border-b border-slate-100 cursor-pointer"
+                      >
                         <td className="px-6 py-2 text-slate-800 text-sm whitespace-nowrap">{mat.material_id}</td>
                         <td className="px-6 py-2 text-slate-800 text-sm">{mat.name}</td>
                         <td className="px-6 py-2 text-slate-800 text-sm capitalize">{mat.category}</td>
