@@ -9,6 +9,7 @@ interface RegisterProps {
 
 export default function Register({ onModeChange }: RegisterProps) {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -54,6 +55,7 @@ export default function Register({ onModeChange }: RegisterProps) {
           .upsert([{ 
             id: signUpData.user.id, 
             email, 
+            username, 
             full_name: fullName, 
             role: 'user',
             created_at: new Date().toISOString(),
@@ -95,6 +97,29 @@ export default function Register({ onModeChange }: RegisterProps) {
       {/* Form Fields & Button exactly matching image layout */}
       <form className="w-full space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-4">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+              <svg className="h-[18px] w-[18px] text-gray-400 group-focus-within:text-green-600 transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.174-.582-7.499-1.632z" />
+              </svg>
+            </div>
+            <input
+              id="username"
+              type="text"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full pl-11 pr-4 py-[14px] rounded-lg border border-[var(--border)] bg-white text-black text-sm focus:ring-1 focus:ring-green-600 focus:border-green-600 transition-all outline-none placeholder-shown:placeholder-gray-400 peer"
+              placeholder=" "
+            />
+            <label
+              htmlFor="username"
+              className="absolute left-11 top-[14px] text-sm text-gray-400 transition-all duration-200 pointer-events-none peer-focus:top-[-8px] peer-focus:text-green-600 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-white peer-not-placeholder-shown:top-[-8px] peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:px-1 peer-not-placeholder-shown:bg-white peer-not-placeholder-shown:text-green-600 bg-white"
+            >
+              Username
+            </label>
+          </div>
+
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
               <svg className="h-[18px] w-[18px] text-gray-400 group-focus-within:text-green-600 transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

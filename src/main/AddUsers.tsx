@@ -8,6 +8,7 @@ import { TableSkeleton } from '../components/SkeletonLoader';
 interface UserProfile {
   id: string;
   email: string;
+  username: string | null;
   full_name: string | null;
   role: string | null;
   created_at: string;
@@ -26,6 +27,7 @@ export default function AddUser() {
   
   const [formData, setFormData] = useState({
     email: '',
+    username: '',
     fullName: '',
     password: '',
     confirmPassword: '',
@@ -99,6 +101,7 @@ export default function AddUser() {
     setSelectedUser(user);
     setFormData({
       email: user.email || '',
+      username: user.username || '',
       fullName: user.full_name || '',
       password: '',
       confirmPassword: '',
@@ -180,7 +183,7 @@ export default function AddUser() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.fullName || !formData.password || !formData.confirmPassword) {
+    if (!formData.email || !formData.username || !formData.fullName || !formData.password || !formData.confirmPassword) {
       showToast('Please fill in required fields', 'error');
       return;
     }
@@ -207,6 +210,7 @@ export default function AddUser() {
         .insert([{ 
           id: signUpData.user.id, 
           email: formData.email,
+          username: formData.username,
           full_name: formData.fullName, 
           role: formData.role 
         }]);
@@ -240,6 +244,7 @@ export default function AddUser() {
       setIsModalOpen(false);
       setFormData({
         email: '',
+        username: '',
         fullName: '',
         password: '',
         confirmPassword: '',
@@ -252,6 +257,7 @@ export default function AddUser() {
   const resetForm = () => {
     setFormData({
       email: '',
+      username: '',
       fullName: '',
       password: '',
       confirmPassword: '',
@@ -262,6 +268,7 @@ export default function AddUser() {
 
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -311,6 +318,7 @@ export default function AddUser() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#f8fafc] border-b border-gray-200">
+                <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Username</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Full Name</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-[#166534] uppercase tracking-wider">Role</th>
@@ -322,11 +330,12 @@ export default function AddUser() {
                 <TableSkeleton rows={5} cols={4} />
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No users found</td>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No users found</td>
                 </tr>
               ) : (
                 filteredUsers.map((user, index) => (
                   <tr key={user.id} className={`hover:bg-slate-50 transition-colors group border-b border-slate-100 last:border-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                    <td className="px-6 py-1.5 text-sm text-slate-800">{user.username || '-'}</td>
                     <td className="px-6 py-1.5 text-sm text-slate-800">{user.full_name || '-'}</td>
                     <td className="px-6 py-1.5 text-sm text-slate-600">{user.email || '-'}</td>
                     <td className="px-6 py-1.5">
@@ -377,6 +386,18 @@ export default function AddUser() {
             <form onSubmit={handleSubmit} className="p-6">
 <div className="space-y-4">
                   
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Username</label>
+                    <input 
+                      type="text" 
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal"
+                      placeholder="Enter username"
+                      required
+                    />
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Full Name</label>
                     <input 

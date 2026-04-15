@@ -9,7 +9,7 @@ interface LoginProps {
 
 export default function Login({ onModeChange }: LoginProps) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,8 +20,20 @@ export default function Login({ onModeChange }: LoginProps) {
     setError('');
     setLoading(true);
 
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('username', username)
+      .single();
+
+    if (profileError || !profileData?.email) {
+      setError('Username not found');
+      setLoading(false);
+      return;
+    }
+
     const { error, data } = await supabase.auth.signInWithPassword({
-      email,
+      email: profileData.email,
       password,
     });
 
@@ -63,19 +75,19 @@ export default function Login({ onModeChange }: LoginProps) {
               </svg>
             </div>
             <input
-              id="email"
-              type="email"
+              id="username"
+              type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full pl-11 pr-4 py-[14px] rounded-lg border border-[var(--border)] bg-white text-black text-sm focus:ring-1 focus:ring-green-600 focus:border-green-600 transition-all outline-none placeholder-shown:placeholder-gray-400 peer"
               placeholder=" "
             />
             <label
-              htmlFor="email"
+              htmlFor="username"
               className="absolute left-11 top-[14px] text-sm text-gray-400 transition-all duration-200 pointer-events-none peer-focus:top-[-8px] peer-focus:text-green-600 peer-focus:text-xs peer-focus:px-1 peer-focus:bg-white peer-not-placeholder-shown:top-[-8px] peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:px-1 peer-not-placeholder-shown:bg-white peer-not-placeholder-shown:text-green-600 bg-white"
             >
-              Email
+              Username
             </label>
           </div>
 
