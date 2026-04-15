@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Search, FileDown, Trash, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, Search, FileDown, Trash, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { TableSkeleton } from '../components/SkeletonLoader';
 import { showToast } from '../components/Toast';
@@ -14,6 +14,7 @@ export default function Logs() {
   const [logsPerPage] = useState(10);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logToDelete, setLogToDelete] = useState<any>(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -61,6 +62,19 @@ export default function Logs() {
 
     setShowDeleteConfirm(false);
     setLogToDelete(null);
+  };
+
+  const confirmDeleteAll = async () => {
+    const { error } = await supabase.from('material_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (error) {
+      showToast('Failed to delete all logs', 'error');
+    } else {
+      showToast('All logs deleted successfully', 'success');
+      fetchLogs();
+    }
+
+    setShowDeleteAllConfirm(false);
   };
 
   const exportToPDF = () => {
@@ -123,24 +137,33 @@ export default function Logs() {
           <p className="text-sm text-gray-500">History of material deductions and actions</p>
         </div>
 
-        <div className="relative group max-w-xs w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#166534] transition-colors" />
-          <input
-            type="text"
-            placeholder="Search logs..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none font-medium placeholder:text-gray-400"
-          />
-        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative group max-w-xs w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#166534] transition-colors" />
+            <input
+              type="text"
+              placeholder="Search logs..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-200 bg-white text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none font-medium placeholder:text-gray-400"
+            />
+          </div>
 
-        <button
-          onClick={exportToPDF}
-          className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-gray-700 bg-white border border-gray-200 px-5 py-2 rounded-md hover:bg-gray-50 transition-all active:scale-95 shadow-sm sm:w-auto w-full justify-center order-first sm:order-last"
-        >
-          <FileDown className="w-4 h-4 text-green-700" />
-          Export to PDF
-        </button>
+          <button
+            onClick={() => setShowDeleteAllConfirm(true)}
+            className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-white bg-red-600 px-5 py-2 rounded-md hover:bg-red-700 transition-all active:scale-95 shadow-sm whitespace-nowrap"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete All
+          </button>
+          <button
+            onClick={exportToPDF}
+            className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-gray-700 bg-white border border-gray-200 px-5 py-2 rounded-md hover:bg-gray-50 transition-all active:scale-95 shadow-sm whitespace-nowrap"
+          >
+            <FileDown className="w-4 h-4 text-green-700" />
+            Export to PDF
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden mt-4">
@@ -212,7 +235,7 @@ export default function Logs() {
           )}
         </div>
         
-        {filteredLogs.length > 0 && (
+        {totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white">
             <div className="text-sm text-gray-500">
               Showing {indexOfFirstLog + 1} to {Math.min(indexOfLastLog, filteredLogs.length)} of {filteredLogs.length} entries
@@ -261,6 +284,34 @@ export default function Logs() {
                   className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all font-medium text-sm"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteAllConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-md shadow-xl p-6 w-full max-w-sm border border-gray-200">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="font-bold text-gray-800 text-lg mb-2">Delete All Logs</h3>
+              <p className="text-gray-500 text-sm mb-6">Are you sure you want to delete all logs? This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteAllConfirm(false)}
+                  className="flex-1 px-4 py-2 border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-all font-medium text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteAll}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all font-medium text-sm"
+                >
+                  Delete All
                 </button>
               </div>
             </div>
