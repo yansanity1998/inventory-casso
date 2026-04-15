@@ -357,7 +357,7 @@ export default function AddUser() {
                     <td className="px-6 py-1.5 text-sm text-slate-800">{user.full_name || '-'}</td>
                     <td className="px-6 py-1.5 text-sm text-slate-600">{user.email || '-'}</td>
                     <td className="px-6 py-1.5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                         {user.role || 'user'}
                       </span>
                     </td>
