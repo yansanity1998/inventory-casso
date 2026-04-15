@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { UserPlus, X, Save, Trash2, Search, Settings2 } from 'lucide-react';
+import { UserPlus, X, Save, Trash2, Search, Settings2, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/Toast';
@@ -24,6 +24,10 @@ export default function AddUser() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -110,13 +114,18 @@ export default function AddUser() {
     setIsEditModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+  const handleDeleteClick = (id: string) => {
+    setUserToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
 
     const { error } = await supabase
       .from('profiles')
       .delete()
-      .eq('id', id);
+      .eq('id', userToDelete);
 
     if (error) {
       showToast('Failed to delete user', 'error');
@@ -124,6 +133,9 @@ export default function AddUser() {
       showToast('User deleted successfully', 'success');
       fetchUsers();
     }
+    
+    setShowDeleteConfirm(false);
+    setUserToDelete(null);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -141,9 +153,10 @@ export default function AddUser() {
 
     setSaving(true);
 
-    const updates: { full_name: string; role: string } = {
+    const updates: { full_name: string; role: string; username: string } = {
       full_name: formData.fullName,
       role: formData.role,
+      username: formData.username,
     };
 
     if (formData.password) {
@@ -201,19 +214,24 @@ export default function AddUser() {
       password: formData.password,
       options: {
         emailRedirectTo: window.location.origin,
+        data: {
+          username: formData.username,
+          full_name: formData.fullName,
+          role: formData.role,
+        }
       },
     });
 
     if (signUpData?.user) {
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert([{ 
+        .upsert({ 
           id: signUpData.user.id, 
           email: formData.email,
           username: formData.username,
           full_name: formData.fullName, 
           role: formData.role 
-        }]);
+        });
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
@@ -352,7 +370,7 @@ export default function AddUser() {
                           <Settings2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => handleDeleteClick(user.id)}
                           className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -436,26 +454,44 @@ export default function AddUser() {
 
                   <div className="space-y-1.5">
                     <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Password</label>
-                    <input 
-                      type="password" 
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal"
-                      placeholder="Enter password"
-                      required
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal pr-10"
+                        placeholder="Enter password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#166534] transition-colors"
+                      >
+                        {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Confirm Password</label>
-                    <input 
-                      type="password" 
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none resize-none placeholder:text-gray-300 placeholder:font-normal"
-                      placeholder="Re-enter password"
-                      required
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none resize-none placeholder:text-gray-300 placeholder:font-normal pr-10"
+                        placeholder="Re-enter password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#166534] transition-colors"
+                      >
+                        {showConfirmPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -494,6 +530,18 @@ export default function AddUser() {
             <form onSubmit={handleUpdate} className="p-6">
               <div className="space-y-4">
                 <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Username</label>
+                  <input 
+                    type="text" 
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal"
+                    placeholder="Enter username"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Full Name</label>
                   <input 
                     type="text" 
@@ -519,24 +567,42 @@ export default function AddUser() {
 
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">New Password (leave blank to keep current)</label>
-                  <input 
-                    type="password" 
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal"
-                    placeholder="Enter new password"
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none font-medium placeholder:text-gray-300 placeholder:font-normal pr-10"
+                      placeholder="Enter new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#166534] transition-colors"
+                    >
+                      {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">Confirm Password</label>
-                  <input 
-                    type="password" 
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none resize-none placeholder:text-gray-300 placeholder:font-normal"
-                    placeholder="Re-enter password"
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50/30 text-black text-sm focus:ring-2 focus:ring-[#166534]/10 focus:border-[#166534] transition-all outline-none resize-none placeholder:text-gray-300 placeholder:font-normal pr-10"
+                      placeholder="Re-enter password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#166534] transition-colors"
+                    >
+                      {showConfirmPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -552,6 +618,34 @@ export default function AddUser() {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in-up">
+          <div className="bg-white rounded-md shadow-xl p-6 w-full max-w-sm border border-gray-200">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="font-bold text-gray-800 text-lg mb-2">Delete User</h3>
+              <p className="text-gray-500 text-sm mb-6">Are you sure you want to delete this user? This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-4 py-2 border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-all font-medium text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteUser}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all font-medium text-sm"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
