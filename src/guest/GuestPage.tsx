@@ -4,12 +4,10 @@ import { supabase } from '../lib/supabase';
 import { Search, Package, ArrowLeft, ShoppingBag, Tag, Layers, X } from 'lucide-react';
 import logoUrl from '../assets/casso.png';
 import slide1 from '../assets/casso1.jpg';
-import slide2 from '../assets/city hall.jpg';
-import slide3 from '../assets/carousel 4.jpg';
-import slide4 from '../assets/carousel 5.jpg';
-import slide5 from '../assets/carousel 6.jpg';
-import slide6 from '../assets/carousel 7.jpg';
-import slide7 from '../assets/anahaw.jpg';
+import slide2 from '../assets/carousel 4.jpg';
+import slide3 from '../assets/carousel 5.jpg';
+import slide4 from '../assets/carousel 6.jpg';
+import slide5 from '../assets/carousel 7.jpg';
 
 const CAROUSEL_ITEMS = [
   {
@@ -19,33 +17,23 @@ const CAROUSEL_ITEMS = [
   },
   {
     image: slide2,
-    title: "Streamlined Operations",
-    description: "Efficiently managing resources to serve the people of Iligan City with integrity and excellence."
-  },
-  {
-    image: slide3,
     title: "City of Majestic Waterfalls",
     description: "Building a progressive future while preserving our rich heritage and natural wonders."
   },
   {
-    image: slide4,
+    image: slide3,
     title: "Community First",
     description: "Serving the constituents of Iligan City with dedication and transparency in all our transactions."
   },
   {
-    image: slide5,
+    image: slide4,
     title: "Digital Transformation",
     description: "Embracing technology to modernize our services and improve public accessibility."
   },
   {
-    image: slide6,
+    image: slide5,
     title: "Professional Excellence",
     description: "Committed to highest standards of integrity, competence, and public service."
-  },
-  {
-    image: slide7,
-    title: "Collaborative Governance",
-    description: "Working together with stakeholders to build a better Iligan for all."
   }
 ];
 
